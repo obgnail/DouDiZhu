@@ -160,7 +160,7 @@ func (cpt *CardPartnerTester) IsStraightPair() bool {
 	minCard := cpt.GetMinPointCard()
 
 	// 牌的种类少于3
-	if cardKindCount <= 3 {
+	if cardKindCount < 3 {
 		return false
 	}
 	// 长度不是种类的一半
@@ -188,7 +188,7 @@ func (cpt *CardPartnerTester) IsAirPlaneWithoutWing() bool {
 	}
 
 	var doubleTripleCount int
-	minTripleCardPoint := 100
+	minTripleCardPoint := 1000
 	for point, cardCount := range cpt.mapPointToCount {
 		if cardCount == 3 {
 			doubleTripleCount++
@@ -243,10 +243,10 @@ func (cpt *CardPartnerTester) IsAirPlaneWithDoubleWing() bool {
 	var TripleCardList CardList
 
 	hasRightLen := (cardListLength-10)%5 == 0
-	var doubleLen int
 	if !hasRightLen {
 		return false
 	}
+	var doubleLen int
 	for point, cardCount := range cpt.mapPointToCount {
 		if cardCount == 3 {
 			cards := cpt.GetCardsByCardPoint(point)

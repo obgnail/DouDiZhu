@@ -6,22 +6,22 @@ import (
 )
 
 type Player struct {
-	isDiZhu             bool
+	isLandlord          bool
 	position            int
-	cardMap             map[*Card]byte
+	cardMap             map[*Card]struct{}
 	playCardsInThisTurn CardList
 }
 
-func NewPlayer(isDiZhu bool, position int, cardList CardList) *Player {
-	p := new(Player)
-	p.isDiZhu = isDiZhu
-	p.position = position
-	p.cardMap = ChangeCardListToMap(cardList)
-	return p
+func NewPlayer(isLandlord bool, position int, cardList CardList) *Player {
+	return &Player{
+		isLandlord: isLandlord,
+		position:   position,
+		cardMap:    ChangeCardListToMap(cardList),
+	}
 }
 
-func (p *Player) IsDiZhu() bool {
-	return p.isDiZhu
+func (p *Player) IsLandlord() bool {
+	return p.isLandlord
 }
 
 func (p *Player) GetPosition() int {
@@ -39,7 +39,7 @@ func (p *Player) GetCardList() CardList {
 
 func (p *Player) AppendCard(cards CardList) CardList {
 	for _, card := range cards {
-		p.cardMap[card] = 1
+		p.cardMap[card] = struct{}{}
 	}
 	return p.GetCardList()
 }
@@ -59,8 +59,6 @@ func (p *Player) PlayCards(playCards CardList) error {
 	p.playCardsInThisTurn = playCards
 	return nil
 }
-
-
 
 func (p *Player) Pass() {
 	p.playCardsInThisTurn = nil

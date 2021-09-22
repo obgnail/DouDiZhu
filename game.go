@@ -10,9 +10,10 @@ import (
 )
 
 type Game struct {
-	Cards         map[*Card]byte
-	diZhuCards    [3]*Card
+	Cards         map[*Card]struct{}
+	landlordCards [3]*Card
 	player        [3]*Player
+
 	currentPlayer *Player
 	LastCards     *CardPartnerTester
 }
@@ -22,18 +23,16 @@ func NewGame() *Game {
 	g := new(Game)
 	g.Cards = ChangeCardListToMap(cards)
 
-	diZhuCards := cards[:3]
+	landlordCards := cards[:3]
 	otherCards := cards[3:]
-
 	for i := 0; i < 3; i++ {
 		beginIdx := 17 * i
 		endIdx := beginIdx + 17
 		cards := otherCards[beginIdx:endIdx]
-		p := NewPlayer(false, i, cards)
-		g.player[i] = p
+		g.player[i] = NewPlayer(false, i, cards)
 	}
 
-	g.diZhuCards = [3]*Card{diZhuCards[0], diZhuCards[1], diZhuCards[2]}
+	g.landlordCards = [3]*Card{landlordCards[0], landlordCards[1], landlordCards[2]}
 	return g
 }
 
@@ -45,37 +44,45 @@ func (g *Game) GetCurrentPlayer() *Player {
 	return g.currentPlayer
 }
 
-func (g *Game) GetNextPlayer() *Player {
-	position := g.GetCurrentPlayer().position
-	if position == 2 {
-		position = 0
-	} else {
-		position++
-	}
-	g.currentPlayer = g.GetPlayer(position)
-	return g.currentPlayer
+func (g *Game) SetCurrentPlayer(player *Player) {
+	g.currentPlayer = player
 }
 
-func (g *Game) GetDiZhu() *Player {
+func (g *Game) TurnNextPlayer() *Player {
+	position := g.GetCurrentPlayer().position
+	position++
+	if position == 3 {
+		position = 0
+	}
+	player := g.GetPlayer(position)
+	g.SetCurrentPlayer(player)
+	return player
+}
+
+func (g *Game) GetLastCards() *CardPartnerTester {
+	return g.LastCards
+}
+
+func (g *Game) GetLandlord() *Player {
 	for i := 0; i < 3; i++ {
 		p := g.GetPlayer(i)
-		if p.IsDiZhu() {
+		if p.IsLandlord() {
 			return p
 		}
 	}
 	return nil
 }
 
-func (g *Game) GetDiZhuCard() [3]*Card {
-	return g.diZhuCards
+func (g *Game) GetLandlordCards() [3]*Card {
+	return g.landlordCards
 }
 
-func (g *Game) PlayBecomeDiZhu(position int) {
-	fmt.Printf("player %d became dizhu\n", position)
+func (g *Game) PlayerBecomeLandlord(position int) {
+	fmt.Printf("player %d became landlord\n", position)
 	player := g.GetPlayer(position)
-	player.isDiZhu = true
-	diZhuCards := CardList{g.diZhuCards[0], g.diZhuCards[1], g.diZhuCards[2]}
-	player.AppendCard(diZhuCards)
+	player.isLandlord = true
+	landlordCards := CardList{g.landlordCards[0], g.landlordCards[1], g.landlordCards[2]}
+	player.AppendCard(landlordCards)
 	g.currentPlayer = player
 }
 
@@ -104,8 +111,8 @@ func (g *Game) checkValidPlayCards(playCards CardList) bool {
 	}
 	currentPlayerCardPartnerType := cpt.GetCardPartnerType()
 	lastPlayerCardPartnerType := g.LastCards.GetCardPartnerType()
-	normalBomb,_ := PartnerTypeEnumConverter.Enum(PartnerTypeNormalBomb)
-	rocket,_ := PartnerTypeEnumConverter.Enum(PartnerTypeRocket)
+	normalBomb, _ := PartnerTypeEnumConverter.Enum(PartnerTypeNormalBomb)
+	rocket, _ := PartnerTypeEnumConverter.Enum(PartnerTypeRocket)
 
 	// 炸弹做特殊判断
 	// 王炸
@@ -261,7 +268,7 @@ func (g *Game) ShowAllPlayerCards() {
 	for _, player := range g.player {
 		cardList := player.GetCardList()
 		var identity string
-		if player.IsDiZhu() {
+		if player.IsLandlord() {
 			identity = "landlord"
 		} else {
 			identity = "farmer"
@@ -273,8 +280,8 @@ func (g *Game) ShowAllPlayerCards() {
 func (g *Game) Init() {
 	// 没有设计抢地主功能，直接随机地主
 	rand.Seed(time.Now().UnixNano())
-	diZhuPosition := rand.Intn(3)
-	g.PlayBecomeDiZhu(diZhuPosition)
+	landlordPosition := rand.Intn(3)
+	g.PlayerBecomeLandlord(landlordPosition)
 }
 
 func (g *Game) Play() error {
@@ -282,7 +289,7 @@ func (g *Game) Play() error {
 	player1 := g.GetPlayer(1)
 	player2 := g.GetPlayer(2)
 
-	for len(player0.cardMap) != 0 && len(player1.cardMap) != 0 && len(player2.cardMap) != 0 {
+	for !player0.RunOut() && !player1.RunOut() && !player2.RunOut() {
 		g.ShowAllPlayerCards()
 
 		currentPlayerHasPlayRight := g.CurrentPlayerHasPlayRight()
@@ -329,7 +336,7 @@ func (g *Game) Play() error {
 				return err
 			}
 		}
-		g.GetNextPlayer()
+		g.TurnNextPlayer()
 	}
 	return nil
 }

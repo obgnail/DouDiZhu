@@ -48,8 +48,8 @@ func In(x int, slc []int) bool {
 }
 
 func GenCards() CardList {
-	blackJoker,_ := CardPointTypeEnumConverter.Enum(CardPointBlackJoker)
-	redJoker,_ := CardPointTypeEnumConverter.Enum(CardPointRedJoker)
+	blackJoker, _ := CardPointTypeEnumConverter.Enum(CardPointBlackJoker)
+	redJoker, _ := CardPointTypeEnumConverter.Enum(CardPointRedJoker)
 
 	var cards CardList
 	for point := range CardPointTypeEnumConverter.byEnum {
@@ -79,11 +79,10 @@ func Shuffle(slice CardList) {
 	}
 }
 
-func ChangeCardListToMap(cards CardList) map[*Card]byte {
-	res := make(map[*Card]byte, len(cards))
+func ChangeCardListToMap(cards CardList) map[*Card]struct{} {
+	res := make(map[*Card]struct{}, len(cards))
 	for _, card := range cards {
-		res[card] = 1
+		res[card] = struct{}{}
 	}
 	return res
 }
-
